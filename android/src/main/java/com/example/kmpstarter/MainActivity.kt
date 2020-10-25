@@ -1,58 +1,43 @@
 package com.example.kmpstarter
 
-import android.graphics.Bitmap
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
-import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.compose.*
-import androidx.compose.frames.commit
-import androidx.compose.frames.inFrame
-import androidx.compose.frames.open
-import androidx.ui.core.Text
-import androidx.ui.core.dp
-import androidx.ui.core.setContent
-import androidx.ui.foundation.ColoredRect
-import androidx.ui.foundation.SimpleImage
-import androidx.ui.graphics.Color
-import androidx.ui.graphics.ColorSpace
-import androidx.ui.layout.*
-import androidx.ui.material.*
-import androidx.ui.painting.*
-import androidx.ui.text.ParagraphStyle
-import androidx.ui.text.style.TextAlign
-import coil.Coil
-import coil.api.get
-import com.example.common.helloWordText
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Text
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.ExperimentalLazyDsl
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Divider
+import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.setContent
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.ui.tooling.preview.Preview
 import com.example.common.models.Movie
 import com.example.common.services.ImageUrl
-import com.example.common.state.AppState
 import com.example.common.state.MoviesMenu
-import kotlinx.android.synthetic.main.activity_main.*
+import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.reduxkotlin.Store
-import org.reduxkotlin.StoreSubscriber
-
-@Model
-class CurrentMaterialColors {
-    var colors = MaterialColors()
-}
 
 val dividerColor = Color(0xFFC6C6C6.toInt())
 
-// effect-based API to select/subscribe to store in composition
-fun <TSlice, TState> Store<TState>.select(selector: (TState) -> TSlice) = effectOf<TSlice> {
-    val result = +state { selector(state) }
-    +onCommit(selector) {
+@Composable
+fun <TSlice, TState> Store<TState>.select(selector: (TState) -> TSlice): TSlice {
+    var result by mutableStateOf(selector(state))
+    onCommit(selector) {
         val observer = {
             CoroutineScope(Dispatchers.Main).launch {
                 val newState = selector(state)
-                if (result != newState && inFrame) {
-                    result.value = selector(state)
+                if (result != newState) {
+                    result = selector(state)
                 }
             }
             Unit
@@ -62,17 +47,15 @@ fun <TSlice, TState> Store<TState>.select(selector: (TState) -> TSlice) = effect
             unsubscribe()
         }
     }
-    result.value
+    return result
 }
 
+@ExperimentalLazyDsl
 class MainActivity : AppCompatActivity() {
-
-    private val currentColors = CurrentMaterialColors()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(currentColors.colors) {
+            AppTheme {
                 HomeView()
             }
         }
@@ -81,109 +64,62 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
+@ExperimentalLazyDsl
 @Composable
+@Preview
 fun HomeView() {
-    VerticalScroller {
-        Column {
-            val movies = +store.select { it.moviesState.movies.values.toList() }
-            Text("Now showing")
-            movies.forEachIndexed { index, movie ->
-                Item(movie = movie)
-                if (index != movies.size - 1) {
-                    Divider(color = dividerColor, indent = ItemSize)
-                }
+    val movies = store.select { it.moviesState.movies.values.toList() }
+    LazyColumn(
+        contentPadding = PaddingValues(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        item {
+            Text(
+                text = "Now showing",
+                style = MaterialTheme.typography.h3,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+        itemsIndexed(movies) { index, movie ->
+            Item(movie = movie)
+            if (index != movies.size - 1) {
+                Divider(
+                    color = dividerColor,
+                    modifier = Modifier.padding(16.dp)
+                )
             }
         }
     }
 }
-
 
 @Composable
 fun Item(movie: Movie) {
-    val image: State<Drawable?> = +state { null as Drawable? }
-    GlobalScope.launch {
-        val filePath = movie.poster_path
-        if (filePath != null) {
-            val url = ImageUrl.medium.path(filePath)
-            val drawable = Coil.get(url)
-            CoroutineScope(Dispatchers.Main).launch {
-                image.value = drawable
-            }
-        }
-    }
-    val textStyle = +themeTextStyle { h6 }
-    FlexRow(crossAxisAlignment = CrossAxisAlignment.Stretch) {
-        if (image.value != null) {
-            SimpleImage(AndroidImage((image.value!! as BitmapDrawable).bitmap))
-        }
-
-        Column {
-            Text(
-                text = movie.title,
-                style = textStyle,
-                maxLines = 2,
-                paragraphStyle = ParagraphStyle(textAlign = TextAlign.Start)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding()
+    ) {
+        movie.poster_path?.let {
+            CoilImage(
+                data = ImageUrl.medium.path(it),
+                fadeIn = true,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
-
-            Padding(padding = 8.dp) {
-                Text(text = movie.overview,
-                    maxLines = 5,
-                    paragraphStyle = ParagraphStyle(textAlign = TextAlign.Start),
-                    softWrap = true,
-                    style = +themeTextStyle { body1 })
-            }
-        }
-    }
-
-}
-
-private val ItemSize = 55.dp
-private val ItemPadding = 7.5.dp
-
-internal class AndroidImage(val bitmap: Bitmap) : Image {
-
-    /**
-     * @see Image.width
-     */
-    override val width: Int
-        get() = bitmap.width
-
-    /**
-     * @see Image.height
-     */
-    override val height: Int
-        get() = bitmap.height
-
-    override val config: ImageConfig
-        get() = ImageConfig.Argb8888
-
-    /**
-     * @see Image.colorSpace
-     */
-    override val colorSpace: ColorSpace
-        get() = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ColorSpace.get(ColorSpace.Named.Aces)//bitmap.colorSpace?.toComposeColorSpace() ?: ColorSpace.Named.Srgb.colorSpace
-        } else {
-            ColorSpace.get(ColorSpace.Named.Aces)
-//            ColorSpace.Named.Srgb.colorSpace
         }
 
-    /**
-     * @see Image.hasAlpha
-     */
-    override val hasAlpha: Boolean
-        get() = bitmap.hasAlpha()
+        Text(
+            text = movie.title,
+            style = MaterialTheme.typography.h6,
+            maxLines = 2,
+            textAlign = TextAlign.Center
+        )
 
-    /**
-     * @see Image.nativeImage
-     */
-    override val nativeImage: NativeImage
-        get() = bitmap
-
-    /**
-     * @see
-     */
-    override fun prepareToDraw() {
-        bitmap.prepareToDraw()
+        Text(
+            text = movie.overview,
+            maxLines = 5,
+            textAlign = TextAlign.Center,
+            softWrap = true,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.body1
+        )
     }
 }

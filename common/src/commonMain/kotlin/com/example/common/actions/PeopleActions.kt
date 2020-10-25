@@ -3,14 +3,15 @@ package com.example.common.actions
 import com.example.common.models.*
 import com.example.common.services.APIService
 import com.example.common.services.APIService.Endpoint.*
-import com.example.common.thunk
-import ru.pocketbyte.hydra.log.HydraLog
+import com.example.common.state.AppState
+import ru.pocketbyte.kydra.log.KydraLog
 import kotlinx.serialization.Serializable
-import ru.pocketbyte.hydra.log.info
+import org.reduxkotlin.Thunk
+import ru.pocketbyte.kydra.log.info
 
 class PeopleActions(private val apiService: APIService) {
 
-    fun fetchDetail(people: String) = thunk { dispatch, _, _ ->
+    fun fetchDetail(people: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<People>(
             endpoint = personDetail(person = people),
             params = null
@@ -26,7 +27,7 @@ class PeopleActions(private val apiService: APIService) {
         val profiles: List<ImageData>
     )
 
-    fun fetchImages(people: String) = thunk { dispatch, _, _ ->
+    fun fetchImages(people: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<ImagesResponse>(
             endpoint = personImages(person = people),
             params = null
@@ -42,7 +43,7 @@ class PeopleActions(private val apiService: APIService) {
         val crew: List<Movie>?
     )
 
-    fun fetchPeopleCredits(people: String) = thunk { dispatch, _, _ ->
+    fun fetchPeopleCredits(people: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<PeopleCreditsResponse>(
             endpoint = personMovieCredits(person = people),
             params = null
@@ -52,14 +53,14 @@ class PeopleActions(private val apiService: APIService) {
         }
     }
 
-    fun fetchMovieCasts(movie: String) = thunk { dispatch, _, _ ->
+    fun fetchMovieCasts(movie: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<CastResponse>(endpoint = credits(movie = movie), params = null) {
             onSuccess { dispatch(SetMovieCasts(movie = movie, response = it)) }
             onFailure { }
         }
     }
 
-    fun fetchSearch(query: String, page: Int) = thunk { dispatch, _, _ ->
+    fun fetchSearch(query: String, page: Int): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<PeoplePaginatedResponse>(
             endpoint = searchPerson,
             params = mapOf("query" to query, "page" to page.toString())
@@ -69,13 +70,13 @@ class PeopleActions(private val apiService: APIService) {
         }
     }
 
-    fun fetchPopular(page: Int) = thunk { dispatch, getState, extraArgument ->
+    fun fetchPopular(page: Int): Thunk<AppState> = { dispatch, getState, extraArgument ->
         apiService.GET<PeoplePaginatedResponse>(
             endpoint = popularPersons,
             params = mapOf("page" to "$page", "region" to "us")
         ) {
             onSuccess { dispatch(SetPopular(page = page, response = it)) }
-            onFailure { HydraLog.info(it.message ?: "error") }
+            onFailure { KydraLog.info(it.message ?: "error") }
         }
     }
 

@@ -4,7 +4,7 @@ import com.example.common.actions.MoviesActions
 import com.example.common.actions.PeopleActions
 import com.example.common.getPreferredLanguage
 import com.example.common.models.*
-import ru.pocketbyte.hydra.log.HydraLog
+import ru.pocketbyte.kydra.log.KydraLog
 import io.ktor.client.HttpClient
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.features.json.serializer.KotlinxSerializer
@@ -21,7 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import ru.pocketbyte.hydra.log.info
+import ru.pocketbyte.kydra.log.info
 import kotlin.coroutines.CoroutineContext
 
 
@@ -86,36 +86,16 @@ class APIService(
         }
     }
 
+    val json = Json {
+        isLenient = true
+        ignoreUnknownKeys = true
+    }
+
     val client by lazy {
         return@lazy try {
             HttpClient {
                 install(JsonFeature) {
-                    serializer = KotlinxSerializer(Json.nonstrict).apply {
-                        setMapper(ImageData::class, ImageData.serializer())
-                        setMapper(Movie.MovieImages::class, Movie.MovieImages.serializer())
-                        setMapper(Movie::class, Movie.serializer())
-                        setMapper(MovieUserMeta::class, MovieUserMeta.serializer())
-                        setMapper(CustomList::class, CustomList.serializer())
-                        setMapper(DiscoverFilter::class, DiscoverFilter.serializer())
-                        setMapper(MovieUserMeta::class, MovieUserMeta.serializer())
-                        setMapper(People::class, People.serializer())
-                        setMapper(Genre::class, Genre.serializer())
-                        setMapper(Keyword::class, Keyword.serializer())
-                        setMapper(Movie.Keywords::class, Movie.Keywords.serializer())
-                        setMapper(CastResponse::class, CastResponse.serializer())
-                        setMapper(Review::class, Review.serializer())
-                        setMapper(MoviesActions.GenresResponse::class, MoviesActions.GenresResponse.serializer())
-                        setMapper(MoviePaginatedResponse::class, MoviePaginatedResponse.serializer())
-                        setMapper(GenrePaginatedResponse::class, GenrePaginatedResponse.serializer())
-                        setMapper(PeoplePaginatedResponse::class, PeoplePaginatedResponse.serializer())
-                        setMapper(ReviewPaginatedResponse::class, ReviewPaginatedResponse.serializer())
-                        setMapper(KeywordPaginatedResponse::class, KeywordPaginatedResponse.serializer())
-                        setMapper(Movie.ProductionCountry::class, Movie.ProductionCountry.serializer())
-                        setMapper(People.KnownFor::class, People.KnownFor.serializer())
-                        setMapper(PeopleActions.PeopleCreditsResponse::class, PeopleActions.PeopleCreditsResponse.serializer())
-                        setMapper(PeopleActions.ImagesResponse::class, PeopleActions.ImagesResponse.serializer())
-
-                    }
+                    serializer = KotlinxSerializer(json)
                 }
                 install(Logging) {
                     logger = Logger.DEFAULT
@@ -133,14 +113,14 @@ class APIService(
         crossinline completionHandler: (Result<T>).() -> Unit
     ) {
         launch {
-            HydraLog.info("BASE_URL = $baseURL")
+            KydraLog.info("BASE_URL = $baseURL")
             try {
                 val response = client.get<T> {
                     apiUrl(endpoint.path())
                     parameter("api_key", apiKey)
                     parameter("language", getPreferredLanguage())
                     params?.forEach { parameter(it.key, it.value) }
-                    HydraLog.info("URL: ${url.buildString()}")
+                    KydraLog.info("URL: ${url.buildString()}")
                 }
 //                uiScope.launch {
                     completionHandler(Result.success(response))

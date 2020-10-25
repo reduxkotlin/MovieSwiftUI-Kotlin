@@ -3,8 +3,8 @@ package com.example.common.state
 import com.example.common.services.APIService
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import ru.pocketbyte.hydra.log.HydraLog
-import ru.pocketbyte.hydra.log.debug
+import ru.pocketbyte.kydra.log.KydraLog
+import ru.pocketbyte.kydra.log.debug
 
 @Serializable
 data class AppState(
@@ -12,18 +12,23 @@ data class AppState(
     val peoplesState: PeoplesState = PeoplesState()
 ) {
     fun encode(): String {
-        val json = Json.nonstrict.toJson(serializer(), this).toString()
-        HydraLog.debug(json)
-        return json
+        val encoded = json.encodeToJsonElement(serializer(), this).toString()
+        KydraLog.debug(encoded)
+        return encoded
     }
 
     fun getSaveState() = copy(moviesState = moviesState.getSaveState(),
         peoplesState = peoplesState.getSaveState())
 
     companion object {
+        val json = Json {
+            isLenient = true
+            ignoreUnknownKeys = true
+        }
+
         fun decode(jsonStr: String): AppState {
-            HydraLog.debug(jsonStr)
-            return Json.nonstrict.parse(serializer(), jsonStr)
+            KydraLog.debug(jsonStr)
+            return json.decodeFromString(serializer(), jsonStr)
         }
         fun initialValue() = AppState()
     }

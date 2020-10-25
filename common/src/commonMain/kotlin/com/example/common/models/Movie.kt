@@ -1,6 +1,7 @@
 package com.example.common.models
 
 import com.benasher44.uuid.Uuid
+import com.benasher44.uuid.uuid4
 import com.example.common.preferences.AppUserDefaults
 import com.soywiz.klock.DateFormat
 import com.soywiz.klock.DateTime
@@ -53,7 +54,7 @@ data class Movie(
     @Serializable
     data class ProductionCountry(
         @Transient
-        val id: Uuid = Uuid(),
+        val id: Uuid = uuid4(),
         val name: String
     )
 }

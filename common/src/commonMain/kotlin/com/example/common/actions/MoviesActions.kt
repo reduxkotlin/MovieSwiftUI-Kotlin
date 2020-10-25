@@ -5,16 +5,17 @@ import com.example.common.models.*
 import com.example.common.preferences.AppUserDefaults
 import com.example.common.services.APIService
 import com.example.common.services.APIService.*
+import com.example.common.state.AppState
 import com.example.common.state.MoviesMenu
-import com.example.common.thunk
-import ru.pocketbyte.hydra.log.HydraLog
+import ru.pocketbyte.kydra.log.KydraLog
 import kotlinx.serialization.Serializable
-import ru.pocketbyte.hydra.log.info
+import org.reduxkotlin.Thunk
+import ru.pocketbyte.kydra.log.info
 
 class MoviesActions(private val apiService: APIService,
                     private val appUserDefaults: AppUserDefaults) {
 
-    fun fetchMoviesMenuList(list: MoviesMenu, page: Int) = thunk { dispatch, _, _ ->
+    fun fetchMoviesMenuList(list: MoviesMenu, page: Int): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = list.endpoint,
             params = mapOf(
@@ -32,13 +33,12 @@ class MoviesActions(private val apiService: APIService,
                 )
             }
             onFailure {
-                HydraLog.info(it.message ?: "Error fetching")
+                KydraLog.info(it.message ?: "Error fetching")
             }
         }
     }
 
-    fun fetchDetail(movie: String) =
-        thunk { dispatch, _, _ ->
+    fun fetchDetail(movie: String): Thunk<AppState> = { dispatch, _, _ ->
             apiService.GET<Movie>(
                 endpoint = Endpoint.movieDetail(movie = movie),
                 params = mapOf(
@@ -51,7 +51,7 @@ class MoviesActions(private val apiService: APIService,
             }
         }
 
-    fun fetchRecommended(movie: String) = thunk { dispatch, _, _ ->
+    fun fetchRecommended(movie: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.recommended(
                 movie = movie
@@ -62,7 +62,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchSimilar(movie: String) = thunk { dispatch, _, _ ->
+    fun fetchSimilar(movie: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.similar(movie = movie),
             params = null
@@ -72,7 +72,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchSearch(query: String, page: Int) = thunk { dispatch, _, _ ->
+    fun fetchSearch(query: String, page: Int): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.searchMovie,
             params = mapOf("query" to query, "page" to "${page}")
@@ -90,7 +90,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchSearchKeyword(query: String) = thunk { dispatch, _, _ ->
+    fun fetchSearchKeyword(query: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<KeywordPaginatedResponse>(
             endpoint = Endpoint.searchKeyword,
             params = mapOf("query" to query)
@@ -107,7 +107,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchMoviesGenre(genre: Genre, page: Int, sortBy: MoviesSort) = thunk { dispatch, _, _ ->
+    fun fetchMoviesGenre(genre: Genre, page: Int, sortBy: MoviesSort): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.discover,
             params = mapOf(
@@ -129,7 +129,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchMovieReviews(movie: String) = thunk { dispatch, _, _ ->
+    fun fetchMovieReviews(movie: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<ReviewPaginatedResponse>(
             endpoint = Endpoint.review(
                 movie =
@@ -141,7 +141,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchMovieWithCrew(crew: String) = thunk { dispatch, _, _ ->
+    fun fetchMovieWithCrew(crew: String): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.discover,
             params = mapOf("with_people" to "$crew")
@@ -151,7 +151,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchMovieWithKeywords(keyword: String, page: Int) = thunk { dispatch, _, _ ->
+    fun fetchMovieWithKeywords(keyword: String, page: Int): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<MoviePaginatedResponse>(
             endpoint = Endpoint.discover, params = mapOf(
                 "page" to "$page",
@@ -171,7 +171,7 @@ class MoviesActions(private val apiService: APIService,
         }
     }
 
-    fun fetchRandomDiscover(filter: DiscoverFilter? = null) = thunk { dispatch, _, _ ->
+    fun fetchRandomDiscover(filter: DiscoverFilter? = null): Thunk<AppState> = { dispatch, _, _ ->
         var filter = filter
         if (filter == null) {
             filter = DiscoverFilter.randomFilter()
@@ -192,10 +192,10 @@ class MoviesActions(private val apiService: APIService,
     @Serializable
     data class GenresResponse(val genres: List<Genre>)
 
-    fun fetchGenres() = thunk { dispatch, _, _ ->
+    fun fetchGenres(): Thunk<AppState> = { dispatch, _, _ ->
         apiService.GET<GenresResponse>(endpoint = Endpoint.genres, params = null) {
             onSuccess { dispatch(SetGenres(genres = it.genres)) }
-            onFailure { HydraLog.info(it.message ?: "Failure fetching Genres")}
+            onFailure { KydraLog.info(it.message ?: "Failure fetching Genres")}
         }
     }
 

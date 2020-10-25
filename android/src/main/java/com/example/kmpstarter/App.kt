@@ -7,9 +7,9 @@ import com.example.common.preferences.AppUserDefaults
 import com.example.common.preferences.settings
 import com.example.common.services.APIService
 import kotlinx.coroutines.Dispatchers
-import ru.pocketbyte.hydra.log.HydraLog
-import ru.pocketbyte.hydra.log.LogLevel
-import ru.pocketbyte.hydra.log.initDefault
+import ru.pocketbyte.kydra.log.KydraLog
+import ru.pocketbyte.kydra.log.LogLevel
+import ru.pocketbyte.kydra.log.initDefault
 
 val store = createStore()
 lateinit var movieActions: MoviesActions
@@ -22,9 +22,9 @@ class App: Application() {
         super.onCreate()
         if (!BuildConfig.DEBUG) {
             // No need to write debug logs in production build
-            HydraLog.initDefault(LogLevel.INFO)
+            KydraLog.initDefault(LogLevel.INFO)
         } else {
-            HydraLog.initDefault(LogLevel.DEBUG)
+            KydraLog.initDefault(LogLevel.DEBUG)
         }
         appUserDefaults = AppUserDefaults(settings(this))
         movieActions = MoviesActions(apiService, appUserDefaults)
