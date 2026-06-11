@@ -1,3 +1,5 @@
+> ⚠️ **This repository is archived.** Historical experiment with a custom Flux implementation; see the [redux-kotlin monorepo](https://github.com/reduxkotlin/redux-kotlin) for the maintained library.
+
 # MovieSwiftUI-Kotlin
 
 *****
